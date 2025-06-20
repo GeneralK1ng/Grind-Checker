@@ -86,30 +86,43 @@ def write_analysis_to_file(result):
     today = datetime.now(local_tz).strftime("%Y-%m-%d")
     os.makedirs("reports", exist_ok=True)
     with open(f"reports/{today}.md", "w", encoding="utf-8") as f:
-        f.write(f"# GitHub Activity Report - {today}\n\n")
-        f.write(f"👤 User: {result['username']}\n")
-        f.write(f"📊 Total Events: {result['total_activity']} | Off-Hour Events: {result['off_hour_count']}\n")
-        f.write(
-            f"📅 Active Days: {result['active_days_count']} | Midnight Events: {result['midnight_activity']} | Weekend Events: {result['weekend_activity']}\n")
-        f.write(f"🔥 Grind Score: {result['grind_score']:.2f}\n\n")
+        f.write(f"# 📈 GitHub Activity Report — {today}\n\n")
 
-        f.write("🔧 Event Type Breakdown:\n")
-        for k, v in result['event_type_count'].items():
-            f.write(f"- {k}: {v}\n")
+        f.write(f"## 👤 User\n")
+        f.write(f"- Username: **{result['username']}**\n\n")
 
-        f.write("\n⏰ Hourly Activity (Local Time):\n")
+        f.write(f"## 📊 Summary\n")
+        f.write(f"- Total Events: **{result['total_activity']}**\n")
+        f.write(f"- Off-Hour Events: **{result['off_hour_count']}**\n")
+        f.write(f"- Midnight Events (00–05h): **{result['midnight_activity']}**\n")
+        f.write(f"- Weekend Events: **{result['weekend_activity']}**\n")
+        f.write(f"- Active Days (last {lookback_days} days): **{result['active_days_count']}**\n")
+        f.write(f"- 🔥 Grind Score: **{result['grind_score']:.2f}**\n\n")
+
+        f.write(f"## 🔧 Event Type Breakdown\n")
+        f.write("| Event Type | Count |\n")
+        f.write("|------------|-------|\n")
+        for k, v in sorted(result['event_type_count'].items()):
+            f.write(f"| {k} | {v} |\n")
+        f.write("\n")
+
+        f.write(f"## ⏰ Hourly Activity (Local Time)\n")
+        f.write("```text\n")
         max_count = max(result["hourly_activity"].values()) or 1
         for hour in range(24):
             count = result["hourly_activity"].get(hour, 0)
             bar = '▇' * int(count * 20 / max_count)
-            f.write(f"{hour:02d}:00 | {bar} ({count})\n")
+            f.write(f"{hour:02d}:00 | {bar:<20} ({count})\n")
+        f.write("```\n\n")
 
-        f.write("\n📆 Daily Activity Breakdown:\n")
+        f.write(f"## 📆 Daily Activity Breakdown\n")
         for day in sorted(result["daily_hour_activity"]):
-            f.write(f"- {day}: ")
+            f.write(f"### {day}\n")
+            f.write("| Hour | Events |\n")
+            f.write("|------|--------|\n")
             for hour in sorted(result["daily_hour_activity"][day]):
                 count = result["daily_hour_activity"][day][hour]
-                f.write(f"{hour:02d}h({count}) ")
+                f.write(f"| {hour:02d}:00 | {count} |\n")
             f.write("\n")
 
 
