@@ -10,13 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout reports branch
         uses: actions/checkout@v4
+        with:
+          ref: reports
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          ref: reports
           python-version: '3.11'
 
       - name: Install dependencies
@@ -28,9 +29,11 @@ jobs:
         run: python scripts/github_grind_checker.py
 
       - name: Commit and push report
+        env:
+          TOKEN: ${{ secrets.PERSONAL_GH_TOKEN }}
         run: |
           git config --global user.name 'GeneralK1ng'
           git config --global user.email 'generak1ng0@gmail.com'
           git add reports/*.md
           git commit -m "📊 Daily report for $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          git push https://$TOKEN@github.com/GeneralK1ng/Grind-Checker.git reports
+          git push https://$TOKEN@github.com/GeneralK1ng/Grind-Checker.git HEAD
