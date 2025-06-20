@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout reports branch
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: reports
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,7 +28,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GH_TOKEN }}
         run: python scripts/github_grind_checker.py
 
+      - name: Checkout reports branch
+        uses: actions/checkout@v4
+        with:
+          ref: reports
+          path: reports-branch
+
+      - name: Copy report to reports branch folder
+        run: |
+          cp reports/*.md reports-branch/reports/
+
       - name: Commit and push report
+        working-directory: reports-branch
         env:
           TOKEN: ${{ secrets.PERSONAL_GH_TOKEN }}
         run: |
@@ -36,4 +47,4 @@ jobs:
           git config --global user.email 'generak1ng0@gmail.com'
           git add reports/*.md
           git commit -m "📊 Daily report for $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          git push https://$TOKEN@github.com/GeneralK1ng/Grind-Checker.git HEAD
+          git push https://$TOKEN@github.com/GeneralK1ng/Grind-Checker.git reports
