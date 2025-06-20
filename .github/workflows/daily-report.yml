@@ -24,12 +24,12 @@ jobs:
       - name: Generate report
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_GH_TOKEN }}
-        run: python scripts/grind_report.py
+        run: python scripts/github_grind_checker.py
 
       - name: Commit and push report
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config --global user.name 'GeneralK1ng'
+          git config --global user.email 'generak1ng0@gmail.com'
           git add reports/*.md
           git commit -m "📊 Daily report for $(date +'%Y-%m-%d')" || echo "No changes to commit"
           git push
