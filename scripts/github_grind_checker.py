@@ -1,3 +1,4 @@
+import os
 import requests
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
@@ -6,9 +7,10 @@ usernames = ['GeneralK1ng']
 work_start_hour = 10
 work_end_hour = 18
 lookback_days = 7
-github_token = "your_github_token"
+github_token = os.getenv("GITHUB_TOKEN")
 
 local_tz = datetime.now().astimezone().tzinfo
+
 
 def fetch_user_events(username, token=None):
     headers = {}
@@ -20,6 +22,7 @@ def fetch_user_events(username, token=None):
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         yield from response.json()
+
 
 def analyze_user(username):
     hourly_activity = defaultdict(int)
@@ -78,44 +81,45 @@ def analyze_user(username):
         "active_days_count": len(active_days),
     }
 
-def print_analysis(result):
-    print(f"\n{'-' * 50}")
-    print(f"👤 User: {result['username']}")
-    print(f"📊 Total events: {result['total_activity']} | Off-hour events: {result['off_hour_count']}")
-    print(f"📅 Active days: {result['active_days_count']} | Midnight events: {result['midnight_activity']} | Weekend events: {result['weekend_activity']}")
-    print(f"🔥 Grind Score: {result['grind_score']:.2f}")
-    print("🔧 Event type breakdown:")
-    for k, v in result['event_type_count'].items():
-        print(f"  {k}: {v}")
 
-    print("\n⏰ Hourly activity (local time):")
-    max_count = max(result["hourly_activity"].values()) or 1
-    for hour in range(24):
-        count = result["hourly_activity"].get(hour, 0)
-        bar = '▇' * int(count * 20 / max_count)
-        print(f"{hour:02d}:00 | {bar} ({count})")
+def write_analysis_to_file(result):
+    today = datetime.now(local_tz).strftime("%Y-%m-%d")
+    os.makedirs("reports", exist_ok=True)
+    with open(f"reports/{today}.md", "w", encoding="utf-8") as f:
+        f.write(f"# GitHub Activity Report - {today}\n\n")
+        f.write(f"👤 User: {result['username']}\n")
+        f.write(f"📊 Total Events: {result['total_activity']} | Off-Hour Events: {result['off_hour_count']}\n")
+        f.write(
+            f"📅 Active Days: {result['active_days_count']} | Midnight Events: {result['midnight_activity']} | Weekend Events: {result['weekend_activity']}\n")
+        f.write(f"🔥 Grind Score: {result['grind_score']:.2f}\n\n")
 
-    print("\n📆 Daily activity breakdown:")
-    for day in sorted(result["daily_hour_activity"]):
-        print(f" {day}: ", end="")
-        for hour in sorted(result["daily_hour_activity"][day]):
-            count = result["daily_hour_activity"][day][hour]
-            print(f"{hour:02d}h({count}) ", end="")
-        print()
+        f.write("🔧 Event Type Breakdown:\n")
+        for k, v in result['event_type_count'].items():
+            f.write(f"- {k}: {v}\n")
 
-all_results = []
-for user in usernames:
-    try:
-        result = analyze_user(user)
-        if result:
-            all_results.append(result)
-            print_analysis(result)
-        else:
-            print(f"\n⚠️ No recent activity from {user} in last {lookback_days} days.")
-    except Exception as e:
-        print(f"\n❌ Failed to analyze {user}: {e}")
+        f.write("\n⏰ Hourly Activity (Local Time):\n")
+        max_count = max(result["hourly_activity"].values()) or 1
+        for hour in range(24):
+            count = result["hourly_activity"].get(hour, 0)
+            bar = '▇' * int(count * 20 / max_count)
+            f.write(f"{hour:02d}:00 | {bar} ({count})\n")
 
-print(f"\n{'=' * 50}")
-print("🏆 Grind Score Ranking:")
-for r in sorted(all_results, key=lambda x: x["grind_score"], reverse=True):
-    print(f"{r['username']:20s} Grind Score: {r['grind_score']:.2f} | Off-hour: {r['off_hour_count']}/{r['total_activity']}")
+        f.write("\n📆 Daily Activity Breakdown:\n")
+        for day in sorted(result["daily_hour_activity"]):
+            f.write(f"- {day}: ")
+            for hour in sorted(result["daily_hour_activity"][day]):
+                count = result["daily_hour_activity"][day][hour]
+                f.write(f"{hour:02d}h({count}) ")
+            f.write("\n")
+
+
+if __name__ == "__main__":
+    for user in usernames:
+        try:
+            result = analyze_user(user)
+            if result:
+                write_analysis_to_file(result)
+            else:
+                print(f"⚠️ No recent activity from {user} in last {lookback_days} days.")
+        except Exception as e:
+            print(f"❌ Failed to analyze {user}: {e}")
