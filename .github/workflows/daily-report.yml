@@ -2,7 +2,7 @@ name: Daily GitHub Grind Report
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 每天 09:00（中国时间）
+    - cron: '30 14 * * *'
   workflow_dispatch:
 
 jobs:
